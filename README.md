@@ -52,34 +52,113 @@ graph TD
 
 ---
 
-## 🛠️ Installation & Setup
+## 🛠️ Detailed Installation & Setup
 
-### Prerequisites
-*   Node.js (v18+)
-*   npm
+Follow these comprehensive steps to configure and run the V2X simulator on your local machine:
 
-### Quick Start (Development)
+### 1. Prerequisites
+Ensure you have the following software installed:
+*   **Node.js:** Version `18.0.0` or higher. Check your version with:
+    ```bash
+    node -v
+    ```
+*   **npm:** Version `9.0.0` or higher. Check your version with:
+    ```bash
+    npm -v
+    ```
+*   **Git:** To manage the repository codebase.
 
-1.  **Install dependencies in the root directory:**
+---
+
+### 2. Dependency Installation
+
+The project uses a workspace structure with a root dependency orchestrator. Installing dependencies at the root will automatically trigger child builds:
+
+1.  **Clone the repository:**
+    ```bash
+    git clone https://github.com/tharuntulasi06/TATA-v2x.git
+    cd TATA-v2x
+    ```
+2.  **Install all packages:**
     ```bash
     npm install
     ```
-    *(This will automatically trigger postinstall scripts to configure package dependencies across `backend/` and `frontend/` folders).*
-
-2.  **Launch the full stack concurrently:**
-    ```bash
-    npm run dev
-    ```
-    *   **Frontend Client:** Runs at [http://localhost:3000](http://localhost:3000)
-    *   **WebSocket MEC Broker:** Runs on port `8080`
-    *   **Express REST API Server:** Runs on port `8081`
-
-3.  **To build for production:**
-    ```bash
-    npm run build
-    ```
+    *Note: The root `npm install` runs a post-install bootstrap script that automatically configures node modules for both the `backend/` and `frontend/` directories, setting up TypeScript compilation paths.*
 
 ---
+
+### 3. Running the Simulation
+
+You can run the full stack concurrently or start each module in a separate terminal.
+
+#### Option A: Quick Start (Concurrent Execution)
+Run both backend MEC broker and Vite frontend together in a single command:
+```bash
+npm run dev
+```
+*This starts the WebSocket server, REST endpoints, and Vite dev server concurrently, piping all terminal outputs to a unified log stream.*
+
+#### Option B: Manual execution (Separate Terminals)
+If you prefer to inspect process logs separately:
+1.  **Start the Edge MEC Backend:**
+    ```bash
+    cd backend
+    npm install
+    npm run dev
+    ```
+    *Starts the WebSocket server on port `8080` and Express API on port `8081`. Initializes the SQLite database file `v2x_blackbox.db` automatically.*
+2.  **Start the Dashboard Frontend:**
+    ```bash
+    cd frontend
+    npm install
+    npm run dev
+    ```
+    *Launches the Vite Dev Server on port `3000`.*
+
+---
+
+### 4. Database Setup & Verification
+The SQLite database client is fully self-healing:
+*   On the first boot of the backend server, a file named `v2x_blackbox.db` is created in the root directory.
+*   The tables (`incidents`) are initialized automatically with column schema mapping (event type, reaction time, vehicle speed, driver profile, and network configs).
+*   No database administration tool is required; however, you can inspect it with any SQLite viewer (e.g., [DB Browser for SQLite](https://sqlitebrowser.org/)).
+
+---
+
+## 🧪 Detailed Verification & Test Scenarios
+
+Once the dashboard is running at [http://localhost:3000](http://localhost:3000), follow these scenarios to verify the system logic:
+
+### Scenario A: Real-Time V2V Alert & Manual Braking
+1.  Verify the map status overlay says `5G C-V2X ACTIVE`.
+2.  Turn **Autopilot OFF** in the map footer controls (manual mode will display).
+3.  Click the red **"Trigger V2V Brake"** button. The blue vehicle `🚙` ahead will decelerate, and the preceding vehicle's OBU will broadcast a safety warning.
+4.  The top **V2X Target Scanning** HUD panel will flash a red **"COLLISION HAZARD"** alert showing the distance and Time-To-Collision (TTC) countdown.
+5.  Press the **Spacebar** or **Down Arrow** key to apply the brakes.
+6.  Check the **SQLite EDR Incident History (Black Box)** card at the bottom right. A new log entry will immediately appear showing your exact reaction time in milliseconds (e.g., `850 ms`).
+
+### Scenario B: 5G Network Sidelink Degradation
+1.  Navigate to the **5G C-V2X Net Degradation** slider section in the cockpit settings.
+2.  Drag the **MEC Sidelink Delay** slider to `250 ms`.
+3.  Observe that the top HUD panel displays a yellow **"MEC LATENCY CRITICAL"** network warning.
+4.  Trigger a V2V Brake event. The alerts will trigger with a delay, and the recorded brakes response logs in the Black Box will register higher total reaction latency times.
+
+---
+
+## 🔍 Troubleshooting Guide
+
+*   **Dashboard Status displays "OFFLINE":**
+    *   Ensure the backend is running (`lsof -i :8080` on macOS or `netstat -ano | findstr 8080` on Windows).
+    *   If port `8080` is already in use by another process, kill it:
+        ```bash
+        kill -9 $(lsof -t -i:8080)
+        ```
+    *   Refresh the browser page to re-trigger WebSocket handshakes.
+*   **Map is blank or Tiles not rendering:**
+    *   Verify your computer has an active internet connection. OpenStreetMap tiles are fetched dynamically from the OSM servers.
+*   **EDR Logs not showing up in the Black Box list:**
+    *   Ensure the backend REST API on port `8081` is running.
+    *   Ensure you apply the brakes *while the red HUD warning is active*. Braking when no warning is present will not log an EDR record.
 
 ## 📂 Code Layout
 

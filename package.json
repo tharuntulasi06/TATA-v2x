@@ -1,0 +1,15 @@
+{
+  "name": "v2x-simulation-workspace",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "bootstrap": "npm install && npm run bootstrap:backend && npm run bootstrap:frontend",
+    "bootstrap:backend": "npm install --prefix backend",
+    "bootstrap:frontend": "npm install --prefix frontend",
+    "dev": "concurrently --kill-others \"npm run dev --prefix backend\" \"npm run dev --prefix frontend\"",
+    "build": "npm run build --prefix backend && npm run build --prefix frontend"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
